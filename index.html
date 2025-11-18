@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Помощь беженцам — карта и статистика</title>
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+body {
+    font-family: 'Roboto', sans-serif;
+    background: linear-gradient(to bottom, #e0f7fa, #ffffff);
+    margin: 0;
+    padding: 0;
+}
+header {
+    background: linear-gradient(90deg, #00796b, #004d40);
+    color: white;
+    padding: 40px 20px;
+    text-align: center;
+}
+header h1 { margin: 0 0 10px 0; font-size: 2.5rem; }
+header p { margin: 0; font-size: 1.2rem; }
+.container {
+    max-width: 1200px;
+    margin: 30px auto;
+    background: white;
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 6px 25px rgba(0,0,0,0.15);
+}
+select, input[type="text"] {
+    padding: 12px;
+    font-size: 16px;
+    border-radius: 10px;
+    border: 1px solid #ccc;
+    margin-bottom: 20px;
+    width: 100%;
+    transition: 0.3s;
+}
+select:hover, input[type="text"]:hover { border-color: #00796b; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 25px; margin-top: 25px; }
+.card { background: #ffffff; padding: 20px; border-radius: 15px; box-shadow: 0 4px 18px rgba(0,0,0,0.12); transition: transform 0.2s, box-shadow 0.2s; }
+.card:hover { transform: translateY(-5px); box-shadow: 0 8px 25px rgba(0,0,0,0.2); }
+.card h3 { margin-top: 0; color: #00796b; }
+.country-header { display: flex; align-items: center; margin-bottom: 15px; }
+.flag { width: 40px; height: auto; margin-right: 10px; vertical-align: middle; }
+.map-container { margin-top: 40px; text-align: center; }
+iframe { width: 100%; height: 500px; border: none; border-radius: 15px; }
+</style>
+</head>
+<body>
+<header>
+<h1>Помощь беженцам</h1>
+<p>Ищите страны, фильтруйте по климату, зарплате и языку, смотрите статистику и карту</p>
+</header>
+<div class="container">
+<input type="text" id="searchInput" placeholder="Поиск страны..." oninput="filterCountries()">
+<select id="climateFilter" onchange="filterCountries()">
+<option value="">Фильтр по климату</option>
+<option value="тёплый">Тёплый</option>
+<option value="холодный">Холодный</option>
+</select>
+<select id="salaryFilter" onchange="filterCountries()">
+<option value="">Фильтр по зарплате</option>
+<option value="высокая">Высокая</option>
+<option value="средняя">Средняя</option>
+<option value="низкая">Низкая</option>
+</select>
+<select id="languageFilter" onchange="filterCountries()">
+<option value="">Фильтр по языку</option>
+<option value="русский">Русский</option>
+<option value="английский">Английский</option>
+<option value="немецкий">Немецкий</option>
+<option value="французский">Французский</option>
+<option value="испанский">Испанский</option>
+<option value="итальянский">Итальянский</option>
+<option value="шведский">Шведский</option>
+</select>
+<div id="countryInfo" class="grid"></div>
+
+<div class="map-container">
+<h2>Интерактивная карта мира</h2>
+<iframe src="https://www.openstreetmap.org/export/embed.html?bbox=-180.0%2C-90.0%2C180.0%2C90.0&layer=mapnik"></iframe>
+</div>
+</div>
+<script>
+const countries = [
+{flag:'🇩🇪', name:'Германия', climate:'холодный', salary:'высокая', language:['немецкий'], population:'83 млн', gdp:'4 трлн $', safety:'Высокая', conditions:'Сильная соцподдержка, бесплатные интеграционные курсы, жильё и выплаты.', traditions:'Октоберфест, порядок, пунктуальность, чистота.', culture:'Уважение к закону, дисциплина, высокая экология.', pros:'Высокие зарплаты, медицина, безопасность, стабильность.', cons:'Сложная бюрократия, иногда долгие очереди на оформление.', tips:'Лучше изучать немецкий язык заранее и готовить документы для интеграции.'},
+{flag:'🇵🇱', name:'Польша', climate:'холодный', salary:'низкая', language:['русский','польский'], population:'38 млн', gdp:'600 млрд $', safety:'Средняя', conditions:'Быстрое оформление документов, доступное жильё, программы помощи.', traditions:'Католические праздники, уважение к семье и труду.', culture:'Близкая культурно, много украинцев, дружелюбие.', pros:'Низкие цены, близость к Украине, быстрый старт.', cons:'Низкие зарплаты, иногда напряжённое отношение.', tips:'Хорошо иметь контакты украинской общины и поддерживать языковые курсы.'},
+{flag:'🇨🇦', name:'Канада', climate:'холодный', salary:'высокая', language:['английский','французский'], population:'38 млн', gdp:'2 трлн $', safety:'Высокая', conditions:'Иммиграционные программы, медицина, высокий уровень прав.', traditions:'Мультикультурализм, равенство, толерантность.', culture:'Очень много национальностей, спокойствие, уважение.', pros:'Огромные возможности, безопасность, уровень жизни.', cons:'Холод, высокие цены на жильё.', tips:'Рекомендуется заранее изучать английский или французский язык для интеграции.'},
+{flag:'🇪🇸', name:'Испания', climate:'тёплый', salary:'средняя', language:['испанский'], population:'47 млн', gdp:'1.4 трлн $', safety:'Средняя', conditions:'Тёплый климат, доступное жильё, спокойный образ жизни.', traditions:'Сиеста, фестивали, дружелюбие, семейные ценности.', culture:'Открытые люди, много мигрантов, расслабленный ритм.', pros:'Климат, еда, комфорт, море.', cons:'Низкие зарплаты, безработица.', tips:'Лучше заранее подготовить документы и изучать испанский.'},
+{flag:'🇫🇷', name:'Франция', climate:'тёплый', salary:'высокая', language:['французский'], population:'67 млн', gdp:'2.9 трлн $', safety:'Средняя', conditions:'Развитая соцподдержка, бесплатная медицина, защита прав.', traditions:'Праздники, искусство, семейные ценности.', culture:'Кухня, стиль, уважение свобод.', pros:'Высокая социалка, культура, образование.', cons:'Высокие цены, иногда медленная бюрократия.', tips:'Хорошо иметь базовый французский для поиска работы и общения.'},
+{flag:'🇮🇹', name:'Италия', climate:'тёплый', salary:'средняя', language:['итальянский'], population:'60 млн', gdp:'2 трлн $', safety:'Средняя', conditions:'Южное гостеприимство, хорошая еда, много работы в сервисе.', traditions:'Семейность, праздники, кухня.', culture:'Искусство, моду, религия.', pros:'Тёплый климат, комфортная жизнь.', cons:'Низкие зарплаты, бюрократия.', tips:'Лучше заранее изучить итальянский язык для интеграции.'},
+{flag:'🇺🇸', name:'США', climate:'тёплый', salary:'высокая', language:['английский'], population:'331 млн', gdp:'21 трлн $', safety:'Средняя', conditions:'Иммиграционные программы, разнообразие возможностей.', traditions:'Свобода, праздники, спортивные мероприятия.', culture:'Многонациональность, динамичность, работа и карьера.', pros:'Возможности, разнообразие, инновации.', cons:'Сложная визовая система, дорогая медицина.', tips:'Подготовить документы заранее и изучить английский.'},
+{flag:'🇦🇺', name:'Австралия', climate:'тёплый', salary:'высокая', language:['английский'], population:'26 млн', gdp:'1.5 трлн $', safety:'Высокая', conditions:'Иммиграционные программы, климат, высокий уровень жизни.', traditions:'Пляжная культура, спорт, фестивали.', culture:'Многонациональная, открытая, активная.', pros:'Климат, работа, образование.', cons:'Далеко от Европы, дорогие перелёты.', tips:'Лучше знать английский, планировать переезд заранее.'}
+];
+
+function showCountries(list){
+    const info = document.getElementById('countryInfo');
+    info.innerHTML = '';
+    list.forEach(c=>{
+        info.innerHTML += `<div class='card'>
+        <div class='country-header'><span class='flag'>${c.flag}</span><h3>${c.name}</h3></div>
+        <p><strong>Условия:</strong> ${c.conditions}</p>
+        <p><strong>Традиции:</strong> ${c.traditions}</p>
+        <p><strong>Культура:</strong> ${c.culture}</p>
+        <p><strong>Плюсы:</strong> ${c.pros}</p>
+        <p><strong>Минусы:</strong> ${c.cons}</p>
+        <p><strong>Советы:</strong> ${c.tips}</p>
+        <p><strong>Население:</strong> ${c.population}</p>
+        <p><strong>ВВП:</strong> ${c.gdp}</p>
+        <p><strong>Безопасность:</strong> ${c.safety}</p>
+        </div>`;
+    });
+}
+
+function filterCountries(){
+    const search = document.getElementById('searchInput').value.toLowerCase();
+    const climate = document.getElementById('climateFilter').value;
+    const salary = document.getElementById('salaryFilter').value;
+    const language = document.getElementById('languageFilter').value;
+
+    const filtered = countries.filter(c=>{
+        return c.name.toLowerCase().includes(search) &&
+        (climate==''||c.climate==climate) &&
+        (salary==''||c.salary==salary) &&
+        (language==''||c.language.includes(language));
+    });
+    showCountries(filtered);
+}
+
+showCountries(countries);
+</script>
+</body>
+</html>
